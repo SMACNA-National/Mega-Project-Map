@@ -76,21 +76,7 @@
 </head>
 
 <body>
-<style type="text/css">
-    #info {
-        display: block;
-        position: relative;
-        margin: 0px auto;
-        width: 50%;
-        padding: 10px;
-        border: none;
-        border-radius: 3px;
-        font-size: 12px;
-        text-align: center;
-        color: #222;
-        background: #fff;
-    }
-</style>
+
   <div id='map'></div>
   <script>
 
@@ -114,8 +100,6 @@
       zoom: 10,// starting zoom
       transformRequest: transformRequest
     });
-    
-    document.getElementById('info').innerHTML = "SMACNA Mega Project Map"
     
     $(document).ready(function () {
       $.ajax({
