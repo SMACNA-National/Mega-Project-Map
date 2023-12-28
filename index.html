@@ -257,7 +257,8 @@
                   geometry: {
                     type: "Point",
                     coordinates: [spiderLeafLatLng.lng, spiderLeafLatLng.lat]
-                  }
+                  },
+                  properties: element.properties
                 });
               }
 
@@ -342,7 +343,55 @@
         success: function (csvData) { makeGeoJSON(csvData); }
       });
 
+      function showDetail(feature, e) {        
+        var coordinates = feature.geometry.coordinates.slice();
 
+        //set popup text
+        //You can adjust the values of the popup to match the headers of your CSV.
+        // For example: e.features[0].properties.Name is retrieving information from the field Name in the original CSV.
+        var description = `<h3>` + `Local: ` + feature.properties.Local + `</h3>`
+            + `<h4>` + `<b>` + `Project: ` + `</b>` + feature.properties.Project + `</br>`
+            + `<b>` + `City: ` + `</b>` + feature.properties.City + `</br>`
+            + `<b>` + `State: ` + `</b>` + feature.properties.State + `</br>`
+            + `<b>` + `GC/CM: ` + `</b>` + feature.properties.GCCM + `</br>`
+            + `<b>` + `GC Contact Info: ` + `</b>` + feature.properties.GC_Contact_Info + `</br>`
+            + `<b>` + `Primary Sheet Metal Contact: ` + `</b>` + feature.properties.Primary_Sheet_Metal_Contact + `</br>`
+            + `<b>` + `Region: ` + `</b>` + feature.properties.Region + `</br>`
+            + `<b>` + `Industry: ` + `</b>` + feature.properties.Industry + `</br>`
+            + `<b>` + `Estimated Start Date: ` + `</b>` + feature.properties.Estimated_Start_Date + `</br>`
+            + `<b>` + `MOB Date: ` + `</b>` + feature.properties.MOB_Date + `</br>`
+            + `<b>` + `Peak Date: ` + `</b>` + feature.properties.Peak_Date + `</br>`
+            + `<b>` + `Completion: ` + `</b>` + feature.properties.Completion + `</br>`
+            + `<b>` + `Davis Bacon: ` + `</b>` + feature.properties.Davis_Bacon + `</br>`
+            + `<b>` + `NPF Eligible: ` + `</b>` + feature.properties.NPF_Eligible + `</br>`
+            + `<b>` + `SASMI: ` + `</b>` + feature.properties.SASMI + `</br>`
+            + `<b>` + `HVAC: ` + `</b>` + feature.properties.HVAC + `</br>`
+            + `<b>` + `Exterior: ` + `</b>` + feature.properties.Exterior + `</br>`
+            + `<b>` + `Cost: ` + `</b>` + feature.properties.Cost + `</br>`
+            + `<b>` + `Original Estimated Workforce: ` + `</b>` + feature.properties.Original_Estimated_Workforce + `</br>`
+            + `<b>` + `Workforce at Mobilization: ` + `</b>` + feature.properties.Workforce_at_Mobilization + `</br>`
+            + `<b>` + `Estimated Workforce: ` + `</b>` + feature.properties.Estimated_Workforce + `</br>`
+            + `<b>` + `Current Workforce: ` + `</b>` + feature.properties.Current_Workforce + `</br>`
+            + `<b>` + `Peak Workforce: ` + `</b>` + feature.properties.Peak_Workforce + `</br>`
+            + `<b>` + `Predicted Workforce Peaks/Valleys: ` + `</b>` + feature.properties.Predicted_Workforce_Peaks_Valleys + `</br>`
+            + `<b>` + `Per Diems/Special Incentives: ` + `</b>` + feature.properties.Per_Diems_Special_Incentives + `</br>`
+            + `<b>` + `IR Notes 12-22-2022: ` + `</b>` + feature.properties.IR_Notes_12_22_2022 + `</h4>`
+          ;
+
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+
+        //add Popup to map
+
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(description)
+          .addTo(map);
+      }
 
       function makeGeoJSON(csvData) {
         csv2geojson.csv2geojson(csvData, {
@@ -351,7 +400,6 @@
           delimiter: ','
         }, function (err, data) {
           map.on('load', function () {
-
             // Spiderify cluster using layer or markers
             map.on("click", "csvData", e => {
               let features = map.queryRenderedFeatures(e.point, {
@@ -382,8 +430,20 @@
                 });
               }
             })
+            .on("click", SPIDER_LEAVES_LAYER_NAME, e => {
+              e.preventDefault();
+              let features = map.queryRenderedFeatures(e.point, {
+                layers: [SPIDER_LEAVES_LAYER_NAME]
+              });
+              if(features[0]) {
+                showDetail(features[0], e)
+              } 
+              console.log('>>>>>>>>>>>>!!!!', features)
+            })
             .on("click", e => {
-              clearSpiderifiedCluster();
+              if (!e._defaultPrevented) {
+                clearSpiderifiedCluster();
+              }
             })
             .on("zoomstart", () => {
               clearSpiderifiedCluster();
@@ -449,53 +509,7 @@
             // When a click event occurs on a feature in the csvData layer, open a popup at the
             // location of the feature, with description HTML from its properties.
             map.on('click', 'unclustered-point', function (e) {
-              var coordinates = e.features[0].geometry.coordinates.slice();
-
-              //set popup text
-              //You can adjust the values of the popup to match the headers of your CSV.
-              // For example: e.features[0].properties.Name is retrieving information from the field Name in the original CSV.
-              var description = `<h3>` + `Local: ` + e.features[0].properties.Local + `</h3>`
-                 + `<h4>` + `<b>` + `Project: ` + `</b>` + e.features[0].properties.Project + `</br>`
-                 + `<b>` + `City: ` + `</b>` + e.features[0].properties.City + `</br>`
-                 + `<b>` + `State: ` + `</b>` + e.features[0].properties.State + `</br>`
-                 + `<b>` + `GC/CM: ` + `</b>` + e.features[0].properties.GCCM + `</br>`
-                 + `<b>` + `GC Contact Info: ` + `</b>` + e.features[0].properties.GC_Contact_Info + `</br>`
-                 + `<b>` + `Primary Sheet Metal Contact: ` + `</b>` + e.features[0].properties.Primary_Sheet_Metal_Contact + `</br>`
-                 + `<b>` + `Region: ` + `</b>` + e.features[0].properties.Region + `</br>`
-                 + `<b>` + `Industry: ` + `</b>` + e.features[0].properties.Industry + `</br>`
-                 + `<b>` + `Estimated Start Date: ` + `</b>` + e.features[0].properties.Estimated_Start_Date + `</br>`
-                 + `<b>` + `MOB Date: ` + `</b>` + e.features[0].properties.MOB_Date + `</br>`
-                 + `<b>` + `Peak Date: ` + `</b>` + e.features[0].properties.Peak_Date + `</br>`
-                 + `<b>` + `Completion: ` + `</b>` + e.features[0].properties.Completion + `</br>`
-                 + `<b>` + `Davis Bacon: ` + `</b>` + e.features[0].properties.Davis_Bacon + `</br>`
-                 + `<b>` + `NPF Eligible: ` + `</b>` + e.features[0].properties.NPF_Eligible + `</br>`
-                 + `<b>` + `SASMI: ` + `</b>` + e.features[0].properties.SASMI + `</br>`
-                 + `<b>` + `HVAC: ` + `</b>` + e.features[0].properties.HVAC + `</br>`
-                 + `<b>` + `Exterior: ` + `</b>` + e.features[0].properties.Exterior + `</br>`
-                 + `<b>` + `Cost: ` + `</b>` + e.features[0].properties.Cost + `</br>`
-                 + `<b>` + `Original Estimated Workforce: ` + `</b>` + e.features[0].properties.Original_Estimated_Workforce + `</br>`
-                 + `<b>` + `Workforce at Mobilization: ` + `</b>` + e.features[0].properties.Workforce_at_Mobilization + `</br>`
-                 + `<b>` + `Estimated Workforce: ` + `</b>` + e.features[0].properties.Estimated_Workforce + `</br>`
-                 + `<b>` + `Current Workforce: ` + `</b>` + e.features[0].properties.Current_Workforce + `</br>`
-                 + `<b>` + `Peak Workforce: ` + `</b>` + e.features[0].properties.Peak_Workforce + `</br>`
-                 + `<b>` + `Predicted Workforce Peaks/Valleys: ` + `</b>` + e.features[0].properties.Predicted_Workforce_Peaks_Valleys + `</br>`
-                 + `<b>` + `Per Diems/Special Incentives: ` + `</b>` + e.features[0].properties.Per_Diems_Special_Incentives + `</br>`
-                 + `<b>` + `IR Notes 12-22-2022: ` + `</b>` + e.features[0].properties.IR_Notes_12_22_2022 + `</h4>`
-                ;
-
-              // Ensure that if the map is zoomed out such that multiple
-              // copies of the feature are visible, the popup appears
-              // over the copy being pointed to.
-              while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-                coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-              }
-
-              //add Popup to map
-
-              new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(description)
-                .addTo(map);
+              showDetail(e.features[0], e)              
             });
 
             // Change the cursor to a pointer when the mouse is over the places layer.
