@@ -91,12 +91,93 @@
         color: #222;
         background: #fff;
     }
+
+    .map-key {
+      position: absolute;
+      left: 10px;
+      bottom: 25px;
+    }
+    .map-key-content {
+      z-index: 10001;
+      background: white;
+      padding: 20px 15px;
+      text-align: left;
+      box-shadow: 0px 0px 5px 2px black;
+      color: black;
+      margin-bottom: 20px;
+      max-height: 260px;
+      overflow-y: auto;
+      min-width: 133px;
+    }
+    .map-key-content > div {
+      display: flex;
+    }
+    .scale-panel {
+      margin-right: 35px !important;
+    }
+    .map-key .map-key-icon {
+      min-width: 15px;
+      min-height: 15px;
+      width: 15px;
+      margin-right: 7px;
+      margin-top: 2px;
+      height: 15px;
+      margin-bottom: 4px;
+    }
+    .map-key-label {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
   </style>
   
   <div id='map'></div>
   <pre id="smacna"></pre>
+  <div class="map-key">
+    <div class='map-key-content'>
+      <div class='map-key-label'>Map Key</div>
+      <div>
+        <div class="map-key-icon" style="background-color: #fb9902"></div>
+        <div class='map-key-title'>General</div>
+      </div>
+      <div>
+        <div class="map-key-icon" style="background-color: #78327b"></div>
+        <div class='map-key-title'>Food</div>
+      </div>
+      <div>
+        <div class="map-key-icon" style="background-color: #3732ff"></div>
+        <div class='map-key-title'>Tech</div>
+      </div>
+      <div>
+        <div class="map-key-icon" style="background-color: #66b132"></div>
+        <div class='map-key-title'>Energy</div>
+      </div>
+      <div>
+        <div class="map-key-icon" style="background-color: #fe2712"></div>
+        <div class='map-key-title'>Power</div>
+      </div>
+      <div>
+        <div class="map-key-icon" style="background-color: #ff00ba"></div>
+        <div class='map-key-title'>Auto</div>
+      </div>
+      <div>
+        <div class="map-key-icon" style="background-color: #0392ce"></div>
+        <div class='map-key-title'>Healthcare</div>
+      </div>
+    </div>
+  </div>
   <script>
     const SOURCE_EARTHQUAKE = "earthquakes";
+
+    const COLORS = {
+      'General': '#fb9902',
+      'Food': '#78327b',
+      'Tech': '#3732ff',
+      'Energy': '#66b132',
+      'Power': '#fe2712',
+      'Auto': '#ff00ba',
+      'Healthcare': '#0392ce'
+    }
 
     const SPIDERIFY_AFTER_ZOOM = 4; // Spiderify after zoom N, zoom otherwise
     const SPIDER_TYPE = "layer"; // marker: use Mapbox's Marker. layer: Use a Mabpbox point layer
@@ -128,7 +209,25 @@
       .toString(36)
       .substr(2, 9)}`;
     const SPIDER_LEAVES_PAINT_OPTION = {
-      "circle-color": "orange",
+      "circle-color": [
+        "match",
+        ["get", "Industry"],
+        'General',
+        '#fb9902',
+        'Food',
+        '#78327b',
+        'Tech',
+        '#3732ff',
+        'Energy',
+        '#66b132',
+        'Power',
+        '#fe2712',
+        'Auto',
+        '#ff00ba',
+        'Healthcare',
+        '#0392ce',
+        'purple'
+      ],
       "circle-radius": 6,
       "circle-stroke-width": 1,
       "circle-stroke-color": "#fff"
@@ -349,7 +448,8 @@
         //set popup text
         //You can adjust the values of the popup to match the headers of your CSV.
         // For example: e.features[0].properties.Name is retrieving information from the field Name in the original CSV.
-        var description = `<h3>` + `Local: ` + feature.properties.Local + `</h3>`
+        const color = COLORS[feature.properties.Industry] ? COLORS[feature.properties.Industry] : 'purple'
+        var description = `<h3 style="background-color: ${color}">` + `Local: ` + feature.properties.Local + `</h3>`
             + `<h4>` + `<b>` + `Project: ` + `</b>` + feature.properties.Project + `</br>`
             + `<b>` + `City: ` + `</b>` + feature.properties.City + `</br>`
             + `<b>` + `State: ` + `</b>` + feature.properties.State + `</br>`
@@ -495,16 +595,35 @@
               filter: ["!", ["has", "point_count"]],
               'paint': {
                 'circle-radius': 8,
-                'circle-color': "purple"
+                'circle-color': [
+                  "match",
+                  ["get", "Industry"],
+                  'General',
+                  '#fb9902',
+                  'Food',
+                  '#78327b',
+                  'Tech',
+                  '#3732ff',
+                  'Energy',
+                  '#66b132',
+                  'Power',
+                  '#fe2712',
+                  'Auto',
+                  '#ff00ba',
+                  'Healthcare',
+                  '#0392ce',
+                  'purple'
+                ]
               }
             });
 
-            map.addControl(
-              new mapboxgl.ScaleControl({
-                maxWidth: 80,
-                unit: "metric"
-              })
-            );
+            // map.addControl(
+            //   new mapboxgl.ScaleControl({
+            //     maxWidth: 80,
+            //     unit: "metric",
+            //     position: 'bottom-right'
+            //   })
+            // );
 
             // When a click event occurs on a feature in the csvData layer, open a popup at the
             // location of the feature, with description HTML from its properties.
