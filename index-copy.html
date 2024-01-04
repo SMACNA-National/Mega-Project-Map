@@ -17,7 +17,9 @@
     }
 
     #map {
-      height: 100%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
       width: 100%;
     }
 
@@ -93,7 +95,7 @@
     .map-key {
       position: absolute;
       left: 10px;
-      bottom: 55px;
+      bottom: 25px;
     }
     .map-key-content {
       z-index: 10001;
@@ -127,49 +129,10 @@
       font-weight: bold;
       margin-bottom: 14px;
     }
-    .header {
-      height: 80px;
-      background: #121d99;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-    }
-    .title {
-      font-size: 27px;
-      padding: 22px 40px;
-      font-weight: bold;
-    }
-    .body {
-      height: calc(100vh - 80px);
-    }
-    .action {
-      padding: 15px 20px;
-    }
-    .action select {
-      padding: 10px 23px 10px 10px;
-      font-size: 15px;
-    }
   </style>
-  <div class="container">
-    <div class="header">
-      <div class="title">SMACNA Mega Projects Map</div>
-      <div class="action">
-        <select onChange="onFilter(this)">
-          <option value="">Select Industry</option>
-          <option value="General">General</option>
-          <option value="Food">Food</option>
-          <option value="Tech">Tech</option>
-          <option value="Energy">Energy</option>
-          <option value="Power">Power</option>
-          <option value="Auto">Auto</option>
-          <option value="Healthcare">Healthcare</option>
-        </select>
-      </div>
-    </div>
-    <div class="body">
-      <div id='map'></div>
-    </div>
-  </div>
+  
+  <div id='map'></div>
+  <pre id="smacna"></pre>
   <div class="map-key">
     <div class='map-key-content'>
       <div class='map-key-label'>Map Key</div>
@@ -205,7 +168,6 @@
   </div>
   <script>
     const SOURCE_EARTHQUAKE = "earthquakes";
-    let allData = {}
 
     const COLORS = {
       'General': '#fb9902',
@@ -470,97 +432,6 @@
       zoom: 10,// starting zoom
       transformRequest: transformRequest
     });
-
-    function filterIndustry(val) {
-      map.removeLayer('csvData')
-      map.removeLayer('cluster-count')
-      map.removeLayer('unclustered-point')
-      map.removeSource(SOURCE_EARTHQUAKE)
-
-      let data = {}
-      data = JSON.parse(JSON.stringify(allData))
-      if (val) {
-        data['features'] = data.features.filter(feature => {
-          return feature.properties['Industry'] == val
-        })
-      }
-      loadMap(data)
-    }
-
-    function loadMap(data) {
-      map.addSource(SOURCE_EARTHQUAKE, {
-        type: "geojson",
-        data: data,
-        cluster: true,
-        clusterMaxZoom: 14, // Max zoom to cluster points on
-        clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
-      });
-
-      //Add the the layer to the map
-      map.addLayer({
-        'id': 'csvData',
-        'type': 'circle',
-        'source': SOURCE_EARTHQUAKE,
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": [
-            "step",
-            ["get", "point_count"],
-            "#51bbd6",
-            100,
-            "#f1f075",
-            750,
-            "#f28cb1"
-          ],
-          "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40]
-        }
-      });
-      
-      map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: SOURCE_EARTHQUAKE,
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": "{point_count_abbreviated}",
-          "text-size": 12
-        }
-      });
-
-      map.addLayer({
-        id: "unclustered-point",
-        type: "circle",
-        source: SOURCE_EARTHQUAKE,
-        filter: ["!", ["has", "point_count"]],
-        'paint': {
-          'circle-radius': 8,
-          'circle-color': [
-            "match",
-            ["get", "Industry"],
-            'General',
-            '#fb9902',
-            'Food',
-            '#78327b',
-            'Tech',
-            '#3732ff',
-            'Energy',
-            '#66b132',
-            'Power',
-            '#fe2712',
-            'Auto',
-            '#ff00ba',
-            'Healthcare',
-            '#0392ce',
-            'purple'
-          ]
-        }
-      });
-    }
-
-    function onFilter(obj) {
-      console.log($(obj).val())
-      filterIndustry($(obj).val())
-    }
     
     $(document).ready(function () {
       $.ajax({
@@ -628,7 +499,6 @@
           lonfield: 'Longitude',
           delimiter: ','
         }, function (err, data) {
-          allData = JSON.parse(JSON.stringify(data))
           map.on('load', function () {
             // Spiderify cluster using layer or markers
             map.on("click", "csvData", e => {
@@ -679,15 +549,81 @@
               clearSpiderifiedCluster();
             });
 
-            
+            map.addSource(SOURCE_EARTHQUAKE, {
+              type: "geojson",
+              data: data,
+              cluster: true,
+              clusterMaxZoom: 14, // Max zoom to cluster points on
+              clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+            });
 
-            map.addControl(
-              new mapboxgl.ScaleControl({
-                maxWidth: 80,
-                unit: "metric",
-                position: 'bottom-right'
-              })
-            );
+            //Add the the layer to the map
+            map.addLayer({
+              'id': 'csvData',
+              'type': 'circle',
+              'source': SOURCE_EARTHQUAKE,
+              filter: ["has", "point_count"],
+              paint: {
+                "circle-color": [
+                  "step",
+                  ["get", "point_count"],
+                  "#51bbd6",
+                  100,
+                  "#f1f075",
+                  750,
+                  "#f28cb1"
+                ],
+                "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40]
+              }
+            });
+            
+            map.addLayer({
+              id: "cluster-count",
+              type: "symbol",
+              source: SOURCE_EARTHQUAKE,
+              filter: ["has", "point_count"],
+              layout: {
+                "text-field": "{point_count_abbreviated}",
+                "text-size": 12
+              }
+            });
+
+            map.addLayer({
+              id: "unclustered-point",
+              type: "circle",
+              source: SOURCE_EARTHQUAKE,
+              filter: ["!", ["has", "point_count"]],
+              'paint': {
+                'circle-radius': 8,
+                'circle-color': [
+                  "match",
+                  ["get", "Industry"],
+                  'General',
+                  '#fb9902',
+                  'Food',
+                  '#78327b',
+                  'Tech',
+                  '#3732ff',
+                  'Energy',
+                  '#66b132',
+                  'Power',
+                  '#fe2712',
+                  'Auto',
+                  '#ff00ba',
+                  'Healthcare',
+                  '#0392ce',
+                  'purple'
+                ]
+              }
+            });
+
+            // map.addControl(
+            //   new mapboxgl.ScaleControl({
+            //     maxWidth: 80,
+            //     unit: "metric",
+            //     position: 'bottom-right'
+            //   })
+            // );
 
             // When a click event occurs on a feature in the csvData layer, open a popup at the
             // location of the feature, with description HTML from its properties.
@@ -708,12 +644,13 @@
             var bbox = turf.bbox(data);
             map.fitBounds(bbox, { padding: 50 });
 
-            loadMap(data)
           });
 
         });
       };
     });
+
+  document.getElementById('smacna').innerHTML = "SMACNA Mega Projects Map"
   </script>
 
 </body>
